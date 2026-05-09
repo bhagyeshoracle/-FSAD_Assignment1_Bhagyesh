@@ -1,0 +1,18 @@
+{
+  "name": "fsad-assignment",
+  "version": "1.0.0",
+  "description": "Campus Equipment Lending Portal (React + Node.js microservices)",
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "concurrently \"npm --prefix backend/services/auth-service run dev\" \"npm --prefix backend/services/inventory-service run dev\" \"npm --prefix backend/services/lending-service run dev\" \"npm --prefix backend/services/api-gateway run dev\" \"npm --prefix frontend run dev\"",
+    "dev:backend": "concurrently \"npm --prefix backend/services/auth-service run dev\" \"npm --prefix backend/services/inventory-service run dev\" \"npm --prefix backend/services/lending-service run dev\" \"npm --prefix backend/services/api-gateway run dev\"",
+    "build": "npm --prefix frontend run build",
+    "reset:demo": "node backend/shared/resetDemoData.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
