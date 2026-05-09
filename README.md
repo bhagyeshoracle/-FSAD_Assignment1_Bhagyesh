@@ -63,6 +63,7 @@ npm.cmd run dev
 3. Open frontend:
 
 - [http://localhost:5173](http://localhost:5173)
+- Swagger UI: [http://localhost:4000/api-docs](http://localhost:4000/api-docs)
 
 ## Default Demo Accounts
 
@@ -88,6 +89,7 @@ npm.cmd run dev
 
 - Architecture + DB schema: `backend/docs/ARCHITECTURE_AND_DB.md`
 - API documentation: `backend/docs/API_DOCUMENTATION.md`
+- OpenAPI spec: `backend/docs/openapi.yaml`
 - AI usage log: `docs/AI_USAGE_LOG.md`
 - Reflection report: `docs/AI_REFLECTION_REPORT.md`
 - Demo video guide: `docs/DEMO_SCRIPT.md`

@@ -1,0 +1,676 @@
+openapi: 3.0.3
+info:
+  title: Campus Equipment Lending Portal API
+  version: 1.0.0
+  description: |
+    OpenAPI specification for the FSAD Equipment Lending Portal.
+    This documentation covers the public API exposed via the API Gateway.
+servers:
+  - url: http://localhost:4000
+    description: Local API Gateway
+tags:
+  - name: Health
+  - name: Auth
+  - name: Equipment
+  - name: Requests
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [student, staff, admin]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, email, role]
+    AuthResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required: [message, token, user]
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+          enum: [student, staff]
+      required: [name, email, password, role]
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+    Equipment:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category:
+          type: string
+        equipment_condition:
+          type: string
+        description:
+          type: string
+          nullable: true
+        total_quantity:
+          type: integer
+        available_quantity:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        [id, name, category, equipment_condition, total_quantity, available_quantity]
+    EquipmentListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Equipment"
+      required: [data]
+    EquipmentWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        equipment_condition:
+          type: string
+        description:
+          type: string
+        total_quantity:
+          type: integer
+          minimum: 1
+      required: [name, category, equipment_condition, total_quantity]
+    BorrowRequestCreate:
+      type: object
+      properties:
+        equipmentId:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        remarks:
+          type: string
+      required: [equipmentId, quantity, startDate, endDate]
+    BorrowRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        equipmentId:
+          type: integer
+        equipmentName:
+          type: string
+        requesterId:
+          type: integer
+        requesterName:
+          type: string
+        requesterRole:
+          type: string
+          enum: [student, staff, admin]
+        quantity:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED, RETURNED]
+        approvedBy:
+          type: integer
+          nullable: true
+        approverName:
+          type: string
+          nullable: true
+        remarks:
+          type: string
+          nullable: true
+        issuedAt:
+          type: string
+          format: date-time
+          nullable: true
+        returnedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        [
+          id,
+          equipmentId,
+          equipmentName,
+          requesterId,
+          requesterName,
+          requesterRole,
+          quantity,
+          startDate,
+          endDate,
+          status,
+        ]
+    BorrowRequestListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BorrowRequest"
+      required: [data]
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: API gateway health status
+      responses:
+        "200":
+          description: Gateway health response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                  status:
+                    type: string
+                  targets:
+                    type: object
+                required: [service, status, targets]
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new student or staff user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get currently authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+                required: [user]
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/equipment:
+    get:
+      tags: [Equipment]
+      summary: List equipment (with optional filters)
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: availableOnly
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Equipment list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EquipmentListResponse"
+    post:
+      tags: [Equipment]
+      summary: Add equipment (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EquipmentWriteRequest"
+      responses:
+        "201":
+          description: Equipment created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/Equipment"
+                required: [message, data]
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden (non-admin role)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/equipment/{id}:
+    get:
+      tags: [Equipment]
+      summary: Get one equipment by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Equipment details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Equipment"
+                required: [data]
+        "404":
+          description: Equipment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags: [Equipment]
+      summary: Update equipment (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EquipmentWriteRequest"
+      responses:
+        "200":
+          description: Updated equipment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/Equipment"
+                required: [message, data]
+        "400":
+          description: Validation or business-rule error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Equipment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [Equipment]
+      summary: Delete equipment (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Delete successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Active requests exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Equipment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/requests:
+    post:
+      tags: [Requests]
+      summary: Create borrow request
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BorrowRequestCreate"
+      responses:
+        "201":
+          description: Request created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/BorrowRequest"
+                required: [message, data]
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Equipment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Overlapping booking conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      tags: [Requests]
+      summary: List all requests (staff/admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [PENDING, APPROVED, REJECTED, RETURNED]
+      responses:
+        "200":
+          description: Request list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BorrowRequestListResponse"
+        "403":
+          description: Forbidden for student role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/requests/mine:
+    get:
+      tags: [Requests]
+      summary: List requests created by current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User-specific request list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BorrowRequestListResponse"
+  /api/requests/{id}/approve:
+    patch:
+      tags: [Requests]
+      summary: Approve pending request (staff/admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request approved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/BorrowRequest"
+                required: [message, data]
+        "400":
+          description: Invalid request state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Not enough quantity available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/requests/{id}/reject:
+    patch:
+      tags: [Requests]
+      summary: Reject pending request (staff/admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request rejected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/BorrowRequest"
+                required: [message, data]
+        "400":
+          description: Invalid request state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/requests/{id}/return:
+    patch:
+      tags: [Requests]
+      summary: Mark approved request as returned (staff/admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/BorrowRequest"
+                required: [message, data]
+        "400":
+          description: Invalid request state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

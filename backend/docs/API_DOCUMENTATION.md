@@ -2,6 +2,12 @@
 
 Base URL (gateway): `http://localhost:4000/api`
 
+Swagger UI:
+
+- `http://localhost:4000/api-docs`
+- Raw OpenAPI JSON: `http://localhost:4000/api-docs.json`
+- Source OpenAPI file: `backend/docs/openapi.yaml`
+
 ## Auth Endpoints
 
 ### POST `/auth/register`
